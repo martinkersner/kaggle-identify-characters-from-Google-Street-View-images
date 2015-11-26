@@ -2,7 +2,7 @@
 
 This project tries to solve Kaggle competition (knowledge) called [First Steps With Julia](https://www.kaggle.com/c/street-view-getting-started-with-julia), however using only [Caffe framework](http://caffe.berkeleyvision.org/).
 
-**Current score:** 0.58279
+**Current score:** 0.63711
 
 ## Lenet
 Lenet is the first net we try to exploit for character identification.
