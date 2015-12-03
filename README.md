@@ -4,9 +4,11 @@ This project tries to solve Kaggle competition (knowledge) called [First Steps W
 
 **Current score:** 0.63711
 
-## Lenet
+## [Lenet](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf)
 Lenet is the first net we try to exploit for character identification.
 Training is performed from scratch.
 
+Maximal achieved score: 0.63711
+
 ## TODO
-* Evaluate before submitting to Kaggle leaderboard
+* Add new networks

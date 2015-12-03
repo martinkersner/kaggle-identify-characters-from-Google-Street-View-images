@@ -11,8 +11,7 @@ layer {
     scale: 0.00390625
   }
   data_param {
-    #source: "data/train_lmdb"
-    source: "data/train_val_lmdb"
+    source: "data/train_lmdb"
     batch_size: 64
     backend: LMDB
   }
@@ -29,7 +28,7 @@ layer {
     scale: 0.00390625
   }
   data_param {
-    source: "data/test_lmdb"
+    source: "data/val_lmdb"
     batch_size: 100
     backend: LMDB
   }
