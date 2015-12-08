@@ -13,19 +13,17 @@ import tools as tl
 tl.load_caffe()
 import caffe
 
+# TODO saving LOGS
+
 def main():
     if (len(sys.argv) != 2):
         print "You have to specify settings file!" 
         print "./train.py file"
         exit()
 
-    settings_filename = sys.argv[1]
-    with open(settings_filename) as settings_file:    
-            settings = json.load(settings_file)
-        
+    settings = load_settings(sys.argv[1])
     prepare_data(settings)
     
-    # TODO create as parameters of script
     n_iter = settings["n_iter"]
     net_name = "bvlc_reference_caffenet"
     
@@ -35,13 +33,20 @@ def main():
     
     caffe.set_mode_gpu()
     solver = caffe.SGDSolver(solver_path)
-    solver.net.copy_from(model_path)
+
     # TODO add condition for fine-tuning
+    solver.net.copy_from(model_path)
     
     train_loss = np.zeros(n_iter)
     for it in range(n_iter):
         solver.step(1)
         train_loss[it] = solver.net.blobs['loss'].data
+
+def load_settings(settings_filename):
+    with open(settings_filename) as settings_file:    
+        settings = json.load(settings_file)
+
+    return settings
 
 def prepare_data(settings):
     db_names        = settings["db_names"]
