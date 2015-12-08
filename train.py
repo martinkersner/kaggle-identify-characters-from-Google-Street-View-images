@@ -24,11 +24,11 @@ def main():
     settings = load_settings(settings_filename)
     prepare_data(settings)
 
-    caffe.set_mode_gpu() # TODO add to settings file
+    set_computation_mode(settings)
     solver = prepare_model(settings)
     train_loss = train_model(solver, settings)
 
-    plot_and_save_loss(train_loss, training_id, settings)
+    #plot_and_save_loss(train_loss, training_id, settings)
 
 def check_cmd_arguments(argv):
     if (len(argv) != 2):
@@ -61,6 +61,15 @@ def prepare_data(settings):
             tl.imgs_to_lmdb(input_dir, img_names, db, labels=img_idxs)
         else:
             print "Database " + db + " already exists!"
+
+def set_computation_mode(settings):
+    if (settings["comp_mode"].lower() == "gpu"):
+        caffe.set_mode_gpu() 
+    elif (settings["comp_mode"].lower() == "cpu"):
+        caffe.set_mode_cpu()
+    else:
+        print "Computation mode was not correctly specified, GPU is used as default."
+        caffe.set_mode_gpu() 
 
 def prepare_model(settings):
     # caffe requires string type of str and not unicode
