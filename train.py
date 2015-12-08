@@ -21,22 +21,13 @@ def main():
         print "./train.py file"
         exit()
 
+    caffe.set_mode_gpu() # TODO add to settings file
     settings = load_settings(sys.argv[1])
     prepare_data(settings)
-    
-    n_iter = settings["n_iter"]
-    net_name = "bvlc_reference_caffenet"
+    solver = prepare_model(settings)
     
     # Training
-    solver_path = os.path.join(net_name, "solver.prototxt")
-    model_path  = os.path.join(net_name, net_name + ".caffemodel")
-    
-    caffe.set_mode_gpu()
-    solver = caffe.SGDSolver(solver_path)
-
-    # TODO add condition for fine-tuning
-    solver.net.copy_from(model_path)
-    
+    n_iter = settings["n_iter"]
     train_loss = np.zeros(n_iter)
     for it in range(n_iter):
         solver.step(1)
@@ -67,6 +58,20 @@ def prepare_data(settings):
             tl.imgs_to_lmdb(input_dir, img_names, db, labels=img_idxs)
         else:
             print "Database " + db + " already exists!"
+
+def prepare_model(settings):
+    # caffe requires string type of str and not unicode
+    model_dir   = str(settings["model_dir"])
+    model_name  = str(settings["model_name"])
+    solver_name = str(settings["solver_name"])
+    
+    solver_path = os.path.join(model_dir, solver_name + ".prototxt")
+    model_path  = os.path.join(model_dir, model_name + ".caffemodel")
+    
+    solver = caffe.SGDSolver(solver_path)
+    solver.net.copy_from(model_path) # TODO add condition for fine-tuning
+
+    return solver
 
 if __name__ == "__main__":
     main()
