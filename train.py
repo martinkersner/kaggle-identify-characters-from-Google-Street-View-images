@@ -24,13 +24,7 @@ def main():
     caffe.set_mode_gpu() # TODO add to settings file
     prepare_data(settings)
     solver = prepare_model(settings)
-    
-    # Training
-    n_iter = settings["n_iter"]
-    train_loss = np.zeros(n_iter)
-    for it in range(n_iter):
-        solver.step(1)
-        train_loss[it] = solver.net.blobs['loss'].data
+    train_model(solver, settings)
 
 def check_cmd_arguments(argv):
     if (len(argv) != 2):
@@ -77,6 +71,14 @@ def prepare_model(settings):
     solver.net.copy_from(model_path) # TODO add condition for fine-tuning
 
     return solver
+
+def train_model(solver, settings):
+    n_iter = settings["n_iter"]
+    train_loss = np.zeros(n_iter)
+
+    for it in range(n_iter):
+        solver.step(1)
+        train_loss[it] = solver.net.blobs['loss'].data
 
 if __name__ == "__main__":
     main()
