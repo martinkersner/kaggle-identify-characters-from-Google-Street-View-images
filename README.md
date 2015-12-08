@@ -10,10 +10,11 @@ Martin Keršner, <m.kersner@gmail.com>
 * Add new networks
 * Create cycle (create model, train, evaluate, submit result)
 * Automatic submission
-* Measure time of training
-* Change a training script
-* Save loss nad draw a plot at the end of training
-* Run more instances of the same training algorithm at once (load parameters from external file json? csv?)
+* Save a current model when user terminated training
+* Redirect logs or save them while printing, final log for each training should contain:
+  * Solver parameters
+  * Caffe log
+  * Plotted training loss
 
 ## Data description
 Dataset (can be downloaded by [data/download_data.py](https://github.com/martinkersner/kaggle-identify-characters-from-Google-Street-View-images/blob/master/data/download_data.py)) consists of images depicting alphanumerical characters (lowercase [a-z], uppercase [A-Z] and [0-9]), so it includes 62 different classes altogether.
