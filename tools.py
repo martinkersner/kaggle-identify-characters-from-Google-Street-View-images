@@ -5,6 +5,7 @@
 
 import os
 import sys
+import time
 import csv
 import Image
 import numpy as np
@@ -71,3 +72,6 @@ def read_img_names_from_csv(file_name, skip_header=True, delimiter=" ", append_s
             img_labels.append(row[1])
 
     return img_names, img_labels
+
+def current_time():
+    return time.strftime("%Y-%m-%d-%H-%M-%S")
