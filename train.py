@@ -43,8 +43,12 @@ def main():
         train_loss[it] = solver.net.blobs['loss'].data
 
 def load_settings(settings_filename):
-    with open(settings_filename) as settings_file:    
-        settings = json.load(settings_file)
+    try:
+        with open(settings_filename) as settings_file:    
+            settings = json.load(settings_file)
+    except IOError as e:
+        print "Unable to open settings file!"
+        exit()
 
     return settings
 
