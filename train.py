@@ -12,19 +12,23 @@ import label_init as li
 import tools as tl
 tl.load_caffe()
 import caffe
+from pylab import *
 
 # TODO saving LOGS
 
 def main():
+    training_id = tl.current_time()
     check_cmd_arguments(sys.argv)
 
     settings_filename = sys.argv[1]
     settings = load_settings(settings_filename)
+    prepare_data(settings)
 
     caffe.set_mode_gpu() # TODO add to settings file
-    prepare_data(settings)
     solver = prepare_model(settings)
-    train_model(solver, settings)
+    train_loss = train_model(solver, settings)
+
+    plot_and_save_loss(train_loss, training_id, settings)
 
 def check_cmd_arguments(argv):
     if (len(argv) != 2):
@@ -79,6 +83,13 @@ def train_model(solver, settings):
     for it in range(n_iter):
         solver.step(1)
         train_loss[it] = solver.net.blobs['loss'].data
+
+    return train_loss
+
+def plot_and_save_loss(train_loss, training_id, settings):
+    plot(np.vstack([train_loss]).T)
+    plot_name = os.path.join(settings["model_dir"], "logs", "loss-" + training_id + ".png")
+    savefig(plot_name, bbox_inches='tight')
 
 if __name__ == "__main__":
     main()
