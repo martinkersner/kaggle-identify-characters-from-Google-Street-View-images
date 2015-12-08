@@ -16,13 +16,12 @@ import caffe
 # TODO saving LOGS
 
 def main():
-    if (len(sys.argv) != 2):
-        print "You have to specify settings file!" 
-        print "./train.py file"
-        exit()
+    check_cmd_arguments(sys.argv)
+
+    settings_filename = sys.argv[1]
+    settings = load_settings(settings_filename)
 
     caffe.set_mode_gpu() # TODO add to settings file
-    settings = load_settings(sys.argv[1])
     prepare_data(settings)
     solver = prepare_model(settings)
     
@@ -32,6 +31,12 @@ def main():
     for it in range(n_iter):
         solver.step(1)
         train_loss[it] = solver.net.blobs['loss'].data
+
+def check_cmd_arguments(argv):
+    if (len(argv) != 2):
+        print "You have to specify settings file!" 
+        print "./train.py file"
+        exit()
 
 def load_settings(settings_filename):
     try:
