@@ -75,3 +75,6 @@ def read_img_names_from_csv(file_name, skip_header=True, delimiter=" ", append_s
 
 def current_time():
     return time.strftime("%Y-%m-%d-%H-%M-%S")
+
+def unicode2str(list_strings):
+    return [ str(s) for s in list_strings ]

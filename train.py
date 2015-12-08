@@ -21,6 +21,7 @@ from pylab import *
 
 # TODO 
 # saving LOGS
+# automaticaly save solver params
 # save current model when Ctrl+C
 
 def main():
@@ -55,9 +56,10 @@ def load_settings(settings_filename):
     return settings
 
 def prepare_data(settings):
-    db_names        = settings["db_names"]
-    input_img_lists = settings["input_img_lists"]
-    input_img_dirs  = settings["input_img_dirs"]
+    # caffe requires string type of str and not unicode
+    db_names        = tl.unicode2str(settings["db_names"])
+    input_img_lists = tl.unicode2str(settings["input_img_lists"])
+    input_img_dirs  = tl.unicode2str(settings["input_img_dirs"])
 
     for db, input_list, input_dir in zip(db_names, input_img_lists, input_img_dirs):
         img_names, img_labels = tl.read_img_names_from_csv(input_list, skip_header=False, delimiter=",", append_string=".png")
