@@ -3,10 +3,15 @@
 # Martin Kersner, m.kersner@gmail.com
 # 2015/11/23
 
+# How to run:
+# chmod +x train.py
+# ./train settings_example.in
+
 import os
 import sys
 import csv
 import json
+import time
 import numpy as np
 import label_init as li
 import tools as tl
@@ -14,7 +19,9 @@ tl.load_caffe()
 import caffe
 from pylab import *
 
-# TODO saving LOGS
+# TODO 
+# saving LOGS
+# save current model when Ctrl+C
 
 def main():
     training_id = tl.current_time()
@@ -26,9 +33,10 @@ def main():
 
     set_computation_mode(settings)
     solver = prepare_model(settings)
-    train_loss = train_model(solver, settings)
+    train_loss, duration = train_model(solver, settings)
 
-    #plot_and_save_loss(train_loss, training_id, settings)
+    plot_and_save_loss(train_loss, training_id, settings)
+    print "\nDuration: " + sec2hms(duration)
 
 def check_cmd_arguments(argv):
     if (len(argv) != 2):
@@ -89,16 +97,32 @@ def train_model(solver, settings):
     n_iter = settings["n_iter"]
     train_loss = np.zeros(n_iter)
 
+    start = time.clock()
     for it in range(n_iter):
-        solver.step(1)
-        train_loss[it] = solver.net.blobs['loss'].data
+        try:
+            solver.step(1)
+            train_loss[it] = solver.net.blobs['loss'].data
+        except KeyboardInterrupt:
+            end = time.clock()
+            duration = end-start
+            return train_loss, duration
 
-    return train_loss
+    end = time.clock()
+    duration = end-start
+
+    return train_loss, duration
 
 def plot_and_save_loss(train_loss, training_id, settings):
     plot(np.vstack([train_loss]).T)
     plot_name = os.path.join(settings["model_dir"], "logs", "loss-" + training_id + ".png")
     savefig(plot_name, bbox_inches='tight')
+
+def sec2hms(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    hms_str = "%02d:%02d:%02d" % (h, m, s)
+
+    return hms_str
 
 if __name__ == "__main__":
     main()
