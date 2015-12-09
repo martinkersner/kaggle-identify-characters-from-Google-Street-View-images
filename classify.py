@@ -12,7 +12,7 @@ tl.load_caffe()
 import caffe
 
 def main():
-    check_cmd_arguments(sys.argv)
+    tl.check_arguments(sys.argv, 1, "You have to specify settings file!\n./classify.py settings_file")
     settings_filename = sys.argv[1]
     settings = tl.load_settings(settings_filename)
 
@@ -20,7 +20,6 @@ def main():
     caffe_model    = settings["caffe_model"]
     test_list      = settings["test_list"]
 
-    # Testing data
     caffe.set_mode_gpu()
     net = caffe.Net(caffe_prototxt, caffe_model, caffe.TEST)
     
@@ -29,12 +28,6 @@ def main():
     submission_file = classify_images(net, transformer, img_test_names, settings)
 
     print "Results written to " + submission_file
-    
-def check_cmd_arguments(argv):
-    if (len(argv) != 2):
-        print "You have to specify settings file!" 
-        print "./classify_test_data.py file"
-        exit()
 
 def create_transformer(net):
     transformer = caffe.io.Transformer({"data": net.blobs["data"].data.shape})

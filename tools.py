@@ -98,3 +98,8 @@ def load_settings(settings_filename):
         exit()
 
     return settings
+
+def check_arguments(argv, count, output_str):
+    if (len(argv) != count+1):
+        print output_str
+        exit()

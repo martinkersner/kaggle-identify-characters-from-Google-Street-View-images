@@ -25,7 +25,7 @@ from pylab import *
 
 def main():
     training_id = tl.current_time()
-    check_cmd_arguments(sys.argv)
+    tl.check_arguments(sys.argv, 1, "You have to specify settings file!\n./train.py settings_file")
 
     settings_filename = sys.argv[1]
     settings = tl.load_settings(settings_filename)
@@ -37,12 +37,6 @@ def main():
 
     plot_and_save_loss(train_loss, training_id, settings)
     print "\nDuration: " + sec2hms(duration)
-
-def check_cmd_arguments(argv):
-    if (len(argv) != 2):
-        print "You have to specify settings file!" 
-        print "./train.py file"
-        exit()
 
 def prepare_data(settings):
     db_names        = settings["db_names"]
