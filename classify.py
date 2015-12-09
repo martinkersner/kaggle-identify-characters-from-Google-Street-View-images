@@ -3,6 +3,7 @@
 # Martin Kersner, m.kersner@gmail.com
 # 2015/11/26
 
+import sys
 import os
 import csv
 import label_init as li
@@ -10,15 +11,27 @@ import tools as tl
 tl.load_caffe()
 import caffe
 
-net_name = "bvlc_reference_caffenet"
-W = 227
-H = 227
-img_format = "png"
+# TODO set GPU mode
+
+def check_cmd_arguments(argv):
+    if (len(argv) != 2):
+        print "You have to specify settings file!" 
+        print "./classify_test_data.py file"
+        exit()
+
+check_cmd_arguments(sys.argv)
+settings_filename = sys.argv[1]
+settings = tl.load_settings(settings_filename)
+img_width = settings["img_width"]
+img_height = settings["img_height"]
+caffe_prototxt = settings["caffe_prototxt"]
+caffe_model= settings["caffe_model"]
+img_format = settings["img_format"]
+test_list = settings["test_list"]
+test_dir = settings["test_dir"]
 
 # Testing data
-net = caffe.Net(os.path.join(net_name, "deploy.prototxt"),
-                os.path.join(net_name, "_iter_10000.caffemodel"),
-                caffe.TEST)
+net = caffe.Net(caffe_prototxt, caffe_model, caffe.TEST)
 
 print "Creating Transformer"
 transformer = caffe.io.Transformer({"data": net.blobs["data"].data.shape})
@@ -27,11 +40,7 @@ transformer.set_raw_scale("data", 255)
 transformer.set_channel_swap("data", (2,1,0))
 
 print "Reading images"
-input_test_list = "data/test.csv"
-img_test_names, img_test_labels = tl.read_img_names_from_csv(input_test_list, skip_header=False, delimiter=',')
-
-#test_dir = os.path.join("data", "testResized")
-test_dir = os.path.join("data", "test_png_resized256")
+img_test_names, img_test_labels = tl.read_img_names_from_csv(test_list, skip_header=False, delimiter=',')
 
 submission_file = "submission-" + tl.current_time() + ".csv"
 
@@ -43,7 +52,7 @@ with open(submission_file, 'wb') as csvfile:
 
     for id_ in img_test_names:
         print id_
-        net.blobs["data"].reshape(1, 3, W, H)
+        net.blobs["data"].reshape(1, 3, img_width, img_height)
         img_path = os.path.join(test_dir, id_ + "." + img_format)
         net.blobs["data"].data[...] = transformer.preprocess("data", caffe.io.load_image(img_path))
 
