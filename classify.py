@@ -8,6 +8,7 @@ import os
 import csv
 import label_init as li
 import tools as tl
+from ProgressBar import *
 import numpy as np
 tl.load_caffe()
 import caffe
@@ -41,8 +42,7 @@ def create_transformer(net):
 def classify_images(net, transformer, img_test_names, settings):
     submission_file = "submission-" + tl.current_time() + ".csv"
 
-    progress = 0
-    progress_step = 100.0/len(img_test_names)
+    pb = ProgressBar(len(img_test_names))
 
     with open(submission_file, 'wb') as csvfile:
         fieldnames = ["ID", "Class"]
@@ -50,13 +50,10 @@ def classify_images(net, transformer, img_test_names, settings):
         writer.writeheader()
     
         for id_ in img_test_names:
-            progress += progress_step
-            print str(np.round(progress, decimals=1)) + " %",
-            sys.stdout.flush()
-            print "\r",
-
             class_ = classify_image(net, transformer, id_, settings)
             writer.writerow({"ID": id_, "Class": class_})
+
+            pb.print_progress()
 
     return submission_file
 
