@@ -83,6 +83,12 @@ def tuple_unicode2str(key, value):
     if isinstance(value, unicode):
         value = str(value)
 
+        # conversion to boolean 
+        if value.lower() == "true":
+            value = True
+        elif value.lower() == "false":
+            value = False 
+
     return (key, value)
 
 def dict_unicode2str(dictionary):

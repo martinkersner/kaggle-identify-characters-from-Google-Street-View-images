@@ -13,6 +13,9 @@ import numpy as np
 tl.load_caffe()
 import caffe
 
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
 def main():
     tl.check_arguments(sys.argv, 1, "You have to specify settings file!\n./classify.py settings_file")
     settings_filename = sys.argv[1]
@@ -24,12 +27,28 @@ def main():
 
     caffe.set_mode_gpu()
     net = caffe.Net(caffe_prototxt, caffe_model, caffe.TEST)
-    
     transformer = create_transformer(net)
-    img_test_names, img_test_labels = tl.read_img_names_from_csv(test_list, skip_header=False, delimiter=',')
-    submission_file = classify_images(net, transformer, img_test_names, settings)
+
+    img_test_names, img_test_labels = tl.read_img_names_from_csv(test_list,
+                                                                 skip_header=False,
+                                                                 delimiter=',')
+
+    submission_file, confusion_matrix, accuracy = classify_images(net,
+                                                                  transformer,
+                                                                  img_test_names,
+                                                                  img_test_labels,
+                                                                  settings)
 
     print "Results written to " + submission_file
+    print "Accuracy: " + str(accuracy)
+
+    # Confusion matrix
+    if (settings["conf_matrix"]):
+        plt.figure(figsize=(2,2), dpi=200)
+        plt.clf()
+        plt.imshow(confusion_matrix, norm=LogNorm())
+        #plt.colorbar()
+        plt.savefig(settings["conf_matrix_path"])
 
 def create_transformer(net):
     transformer = caffe.io.Transformer({"data": net.blobs["data"].data.shape})
@@ -39,8 +58,12 @@ def create_transformer(net):
 
     return transformer
 
-def classify_images(net, transformer, img_test_names, settings):
+def classify_images(net, transformer, img_test_names, img_test_labels, settings):
     submission_file = "submission-" + tl.current_time() + ".csv"
+
+    num_labels = len(li.labels)
+    confusion_matrix = np.zeros((num_labels, num_labels), dtype=np.uint)
+    pred_hit = np.zeros(len(img_test_names))
 
     pb = ProgressBar(len(img_test_names))
 
@@ -49,13 +72,20 @@ def classify_images(net, transformer, img_test_names, settings):
         writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=fieldnames)
         writer.writeheader()
     
-        for id_ in img_test_names:
+        for i, (id_, true_class) in enumerate(zip(img_test_names, img_test_labels)):
             class_ = classify_image(net, transformer, id_, settings)
             writer.writerow({"ID": id_, "Class": class_})
 
+            confusion_matrix[li.labels[true_class], li.labels[class_]] += 1
+
+            if (class_ == true_class):
+                pred_hit[i] = 1
+
             pb.print_progress()
 
-    return submission_file
+    accuracy = (1.0*np.sum(pred_hit))/len(pred_hit)
+
+    return submission_file, confusion_matrix, accuracy
 
 def classify_image(net, transformer, id_, settings):
     img_width  = settings["img_width"]
