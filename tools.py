@@ -77,14 +77,22 @@ def read_img_names_from_csv(file_name, skip_header=True, delimiter=" ", append_s
 def current_time():
     return time.strftime("%Y-%m-%d-%H-%M-%S")
 
-def unicode2str(list_strings):
-    return [ str(s) for s in list_strings ]
+def tuple_unicode2str(key, value):
+    if isinstance(key, unicode):
+        key = str(key)
+    if isinstance(value, unicode):
+        value = str(value)
 
+    return (key, value)
+
+def dict_unicode2str(dictionary):
+    return dict([tuple_unicode2str(k, v) for k, v in dictionary.items()])
 
 def load_settings(settings_filename):
     try:
         with open(settings_filename) as settings_file:    
-            settings = json.load(settings_file)
+            # caffe requires string type of str and not unicode
+            settings = dict_unicode2str(json.load(settings_file))
     except IOError as e:
         print "Unable to open settings file!"
         exit()

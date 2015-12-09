@@ -45,10 +45,9 @@ def check_cmd_arguments(argv):
         exit()
 
 def prepare_data(settings):
-    # caffe requires string type of str and not unicode
-    db_names        = tl.unicode2str(settings["db_names"])
-    input_img_lists = tl.unicode2str(settings["input_img_lists"])
-    input_img_dirs  = tl.unicode2str(settings["input_img_dirs"])
+    db_names        = settings["db_names"]
+    input_img_lists = settings["input_img_lists"]
+    input_img_dirs  = settings["input_img_dirs"]
 
     for db, input_list, input_dir in zip(db_names, input_img_lists, input_img_dirs):
         img_names, img_labels = tl.read_img_names_from_csv(input_list, skip_header=False, delimiter=",", append_string=".png")
@@ -63,7 +62,7 @@ def prepare_data(settings):
 
 def set_computation_mode(settings):
     if (settings["comp_mode"].lower() == "gpu"):
-        caffe.set_mode_gpu() 
+        caffe.set_mode_gpu()
     elif (settings["comp_mode"].lower() == "cpu"):
         caffe.set_mode_cpu()
     else:
@@ -71,10 +70,9 @@ def set_computation_mode(settings):
         caffe.set_mode_gpu() 
 
 def prepare_model(settings):
-    # caffe requires string type of str and not unicode
-    model_dir   = str(settings["model_dir"])
-    model_name  = str(settings["model_name"])
-    solver_name = str(settings["solver_name"])
+    model_dir   = settings["model_dir"]
+    model_name  = settings["model_name"]
+    solver_name = settings["solver_name"]
     
     solver_path = os.path.join(model_dir, solver_name + ".prototxt")
     model_path  = os.path.join(model_dir, model_name + ".caffemodel")
