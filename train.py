@@ -10,7 +10,6 @@
 import os
 import sys
 import csv
-import json
 import time
 import numpy as np
 import label_init as li
@@ -29,7 +28,7 @@ def main():
     check_cmd_arguments(sys.argv)
 
     settings_filename = sys.argv[1]
-    settings = load_settings(settings_filename)
+    settings = tl.load_settings(settings_filename)
     prepare_data(settings)
 
     set_computation_mode(settings)
@@ -44,16 +43,6 @@ def check_cmd_arguments(argv):
         print "You have to specify settings file!" 
         print "./train.py file"
         exit()
-
-def load_settings(settings_filename):
-    try:
-        with open(settings_filename) as settings_file:    
-            settings = json.load(settings_file)
-    except IOError as e:
-        print "Unable to open settings file!"
-        exit()
-
-    return settings
 
 def prepare_data(settings):
     # caffe requires string type of str and not unicode

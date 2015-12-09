@@ -7,6 +7,7 @@ import os
 import sys
 import time
 import csv
+import json
 import Image
 import numpy as np
 import lmdb
@@ -78,3 +79,14 @@ def current_time():
 
 def unicode2str(list_strings):
     return [ str(s) for s in list_strings ]
+
+
+def load_settings(settings_filename):
+    try:
+        with open(settings_filename) as settings_file:    
+            settings = json.load(settings_file)
+    except IOError as e:
+        print "Unable to open settings file!"
+        exit()
+
+    return settings
