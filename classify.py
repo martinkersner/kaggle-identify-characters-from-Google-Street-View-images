@@ -8,6 +8,7 @@ import os
 import csv
 import label_init as li
 import tools as tl
+import numpy as np
 tl.load_caffe()
 import caffe
 
@@ -40,13 +41,20 @@ def create_transformer(net):
 def classify_images(net, transformer, img_test_names, settings):
     submission_file = "submission-" + tl.current_time() + ".csv"
 
+    progress = 0
+    progress_step = 100.0/len(img_test_names)
+
     with open(submission_file, 'wb') as csvfile:
         fieldnames = ["ID", "Class"]
         writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=fieldnames)
         writer.writeheader()
     
         for id_ in img_test_names:
-            print id_
+            progress += progress_step
+            print str(np.round(progress, decimals=1)) + " %",
+            sys.stdout.flush()
+            print "\r",
+
             class_ = classify_image(net, transformer, id_, settings)
             writer.writerow({"ID": id_, "Class": class_})
 
