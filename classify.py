@@ -39,7 +39,9 @@ def main():
                                                                   img_test_labels,
                                                                   settings)
 
-    print "Results written to " + submission_file
+    if (settings["csv_report"]):
+        print "Results written to " + submission_file
+
     print "Accuracy: " + str(accuracy)
 
     # Confusion matrix
@@ -59,33 +61,44 @@ def create_transformer(net):
     return transformer
 
 def classify_images(net, transformer, img_test_names, img_test_labels, settings):
-    submission_file = "submission-" + tl.current_time() + ".csv"
-
     num_labels = len(li.labels)
     confusion_matrix = np.zeros((num_labels, num_labels), dtype=np.uint)
     pred_hit = np.zeros(len(img_test_names))
+    class_preds = []
 
     pb = ProgressBar(len(img_test_names))
 
-    with open(submission_file, 'wb') as csvfile:
-        fieldnames = ["ID", "Class"]
-        writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=fieldnames)
-        writer.writeheader()
-    
-        for i, (id_, true_class) in enumerate(zip(img_test_names, img_test_labels)):
-            class_ = classify_image(net, transformer, id_, settings)
-            writer.writerow({"ID": id_, "Class": class_})
+    for i, (id_, true_class) in enumerate(zip(img_test_names, img_test_labels)):
+        pred = classify_image(net, transformer, id_, settings)
+        class_preds.append(pred)
 
-            confusion_matrix[li.labels[true_class], li.labels[class_]] += 1
+        if (pred == true_class):
+            pred_hit[i] = 1
 
-            if (class_ == true_class):
-                pred_hit[i] = 1
+        confusion_matrix[li.labels[true_class], li.labels[pred]] += 1
+        pb.print_progress()
 
-            pb.print_progress()
+    if (settings["csv_report"]):
+        submission_file = write_to_csv(img_test_names, class_preds)
+    else:
+        submission_file = None
 
     accuracy = (1.0*np.sum(pred_hit))/len(pred_hit)
 
     return submission_file, confusion_matrix, accuracy
+
+def write_to_csv(img_ids, class_preds):
+    submission_file = "submission-" + tl.current_time() + ".csv"
+    fieldnames = ["ID", "Class"]
+
+    with open(submission_file, 'wb') as csvfile:
+        writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=fieldnames)
+        writer.writeheader()
+
+        for id_, pred in zip(img_ids, class_preds):
+            writer.writerow({fieldnames[0]: id_, fieldnames[1]: pred})
+
+    return submission_file
 
 def classify_image(net, transformer, id_, settings):
     img_width  = settings["img_width"]
