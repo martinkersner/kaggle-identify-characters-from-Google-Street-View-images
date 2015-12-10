@@ -31,7 +31,7 @@ def main():
     settings = tl.load_settings(settings_filename)
     prepare_data(settings)
 
-    set_computation_mode(settings)
+    caffe.set_mode_gpu()
     solver = prepare_model(settings)
     train_loss, duration = train_model(solver, settings)
 
@@ -54,22 +54,9 @@ def prepare_data(settings):
         else:
             print "Database " + db + " already exists!"
 
-def set_computation_mode(settings):
-    if (settings["comp_mode"].lower() == "gpu"):
-        caffe.set_mode_gpu()
-    elif (settings["comp_mode"].lower() == "cpu"):
-        caffe.set_mode_cpu()
-    else:
-        print "Computation mode was not correctly specified, GPU is used as default."
-        caffe.set_mode_gpu() 
-
 def prepare_model(settings):
-    model_dir   = settings["model_dir"]
-    model_name  = settings["model_name"]
-    solver_name = settings["solver_name"]
-    
-    solver_path = os.path.join(model_dir, solver_name + ".prototxt")
-    model_path  = os.path.join(model_dir, model_name + ".caffemodel")
+    model_path  = settings["model_path"] + ".prototxt"
+    solver_path = settings["solver_path"] + ".caffemodel"
     
     solver = caffe.SGDSolver(solver_path)
     solver.net.copy_from(model_path) # TODO add condition for fine-tuning
