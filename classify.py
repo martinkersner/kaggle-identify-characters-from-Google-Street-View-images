@@ -84,9 +84,12 @@ def classify_images(net, transformer, img_test_names, img_test_labels, settings)
     elif (settings["print_term"]):
         print_term(img_test_names, class_preds, settings)
 
-    accuracy = (1.0*np.sum(pred_hit))/len(pred_hit)
+    accuracy = compute_accuracy(pred_hit)
 
     return submission_file, confusion_matrix, accuracy
+
+def compute_accuracy(pred_hit):
+    return (1.0*np.sum(pred_hit))/len(pred_hit)
 
 def print_csv(img_ids, class_preds, settings):
     submission_file = "submission-" + tl.current_time() + ".csv"
