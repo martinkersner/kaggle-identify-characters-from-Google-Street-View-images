@@ -39,7 +39,7 @@ def main():
                                                                   img_test_labels,
                                                                   settings)
 
-    if (settings["csv_report"]):
+    if (settings["print_csv"]):
         print "Results written to " + submission_file
 
     print "Accuracy: " + str(accuracy)
@@ -67,6 +67,7 @@ def classify_images(net, transformer, img_test_names, img_test_labels, settings)
     class_preds = []
 
     pb = ProgressBar(len(img_test_names))
+    submission_file = None
 
     for i, (id_, true_class) in enumerate(zip(img_test_names, img_test_labels)):
         pred = classify_image(net, transformer, id_, settings)
@@ -78,27 +79,35 @@ def classify_images(net, transformer, img_test_names, img_test_labels, settings)
         confusion_matrix[li.labels[true_class], li.labels[pred]] += 1
         pb.print_progress()
 
-    if (settings["csv_report"]):
-        submission_file = write_to_csv(img_test_names, class_preds)
-    else:
-        submission_file = None
+    if (settings["print_csv"]):
+        submission_file = print_csv(img_test_names, class_preds, settings)
+    elif (settings["print_term"]):
+        print_term(img_test_names, class_preds, settings)
 
     accuracy = (1.0*np.sum(pred_hit))/len(pred_hit)
 
     return submission_file, confusion_matrix, accuracy
 
-def write_to_csv(img_ids, class_preds):
+def print_csv(img_ids, class_preds, settings):
     submission_file = "submission-" + tl.current_time() + ".csv"
-    fieldnames = ["ID", "Class"]
+
+    first = settings["field_names"][0] 
+    second = settings["field_names"][1] 
 
     with open(submission_file, 'wb') as csvfile:
-        writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=fieldnames)
+        writer = csv.DictWriter(csvfile, delimiter=',', fieldnames=settings["field_names"])
         writer.writeheader()
 
         for id_, pred in zip(img_ids, class_preds):
-            writer.writerow({fieldnames[0]: id_, fieldnames[1]: pred})
+            writer.writerow({first: id_, second: pred})
 
     return submission_file
+
+def print_term(img_ids, class_preds, settings):
+    print settings["field_names"][0] + "," +settings["field_names"][1]
+
+    for id_, pred in zip(img_ids, class_preds):
+        print id_ + "," + pred
 
 def classify_image(net, transformer, id_, settings):
     img_width  = settings["img_width"]
