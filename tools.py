@@ -5,6 +5,7 @@
 
 import os
 import sys
+import re
 import time
 import csv
 import json
@@ -77,7 +78,7 @@ def read_img_names_from_csv(file_name, skip_header=True, delimiter=" ", append_s
 
     return img_names, img_labels
 
-def current_time():
+def generate_unique_id():
     return time.strftime("%Y-%m-%d-%H-%M-%S")
 
 def tuple_unicode2str(key, value):
@@ -114,8 +115,7 @@ def check_arguments(argv, count, output_str):
         print output_str
         exit()
 
-def create_log_dir(model_log_dir):
-    log_id = current_time()
+def create_log_dir(model_log_dir, log_id):
     log_dir = os.path.join(model_log_dir, log_id)
     os.makedirs(log_dir)
 
@@ -130,3 +130,12 @@ def sec2hms(seconds):
     hms_str = "%02d:%02d:%02d" % (h, m, s)
 
     return hms_str
+
+def modify_solver_parameter(solver_in, solver_out, field, value):
+    with open(solver_in, 'rb') as f_in:
+        with open(solver_out, 'wb') as f_out:
+            for line in f_in:
+                if (re.match(field, line)):
+                    f_out.write(field + ": \"" + value + "\"\n")
+                else:
+                    f_out.write(line)

@@ -18,27 +18,34 @@ tl.load_caffe()
 import caffe
 from pylab import *
 
-# TODO 
-# saving LOGS
-# save current model when Ctrl+C
+# TODO saving CAFFE LOGS
 
 def main():
     tl.check_arguments(sys.argv, 1, "You have to specify settings file!\n./train.py settings_file")
 
     settings_filename = sys.argv[1]
     settings = tl.load_settings(settings_filename)
+
+    train_id = tl.generate_unique_id()
+
+    # TODO refactor
+    log_dir = tl.create_log_dir(settings["log_dir"], train_id)
+    new_solver_path = os.path.join(log_dir, "solver.prototxt")
+    tl.modify_solver_parameter(settings["solver_path"], 
+                               new_solver_path,
+                               "snapshot_prefix", 
+                               os.path.join(settings["log_dir"], train_id))
+    settings["solver_path"] = new_solver_path
+    ##
     
     caffe.set_mode_gpu()
     prepare_data(settings)
     solver = prepare_model(settings)
     train_loss, duration, terminated_it = train_model(solver, settings)
 
-    log(train_loss, duration, terminated_it, settings)
+    log(train_id, train_loss, duration, terminated_it, solver, log_dir, settings)
 
-# TODO CAFFE LOG
-def log(train_loss, duration_int, terminated_it, settings):
-    log_dir = tl.create_log_dir(settings["model_log_dir"])
-    tl.log_file(settings["solver_path"], log_dir)
+def log(train_id, train_loss, duration_int, terminated_it, solver, log_dir, settings):
     tl.log_file(settings["settings_filename"], log_dir)
     tl.log_file(settings["input_img_lists"][0], log_dir)
     tl.log_file(settings["input_img_lists"][1], log_dir)
@@ -51,8 +58,13 @@ def log(train_loss, duration_int, terminated_it, settings):
 
     # terminated training
     if (terminated_it != None):
+        # save model
+        solver.net.save(os.path.join(log_dir, "terminated.caffemodel"))
+
+        # save current iteration
         log_to_file(log_dir, "termination", terminated_it)
         print "Terminated: " + str(terminated_it) + " iterations"
+
 
     print "Duration: " + duration_str
     print "Logged to " + log_dir
@@ -91,7 +103,7 @@ def prepare_model(settings):
     model_path  = settings["model_path"]
     
     solver = caffe.SGDSolver(solver_path)
-    solver.net.copy_from(model_path) # TODO add condition for fine-tuning
+    solver.net.copy_from(model_path) # TODO add condition for training from scratch
 
     return solver
 
