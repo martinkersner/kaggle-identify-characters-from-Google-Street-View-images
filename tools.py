@@ -11,6 +11,7 @@ import json
 import Image
 import numpy as np
 import lmdb
+import shutil
 import caffe
 
 def save_image_from_arary(img_arr, img_name):
@@ -34,6 +35,8 @@ def imgs_to_lmdb(path_src, src_imgs, path_dst, labels=None):
     Source: https://github.com/BVLC/caffe/issues/1698#issuecomment-70211045
     credit: Evan Shelhamer
     '''
+
+    caffe.set_mode_gpu()
 
     if (labels == None):
         labels = [0] * len(src_imgs)
@@ -99,6 +102,7 @@ def load_settings(settings_filename):
         with open(settings_filename) as settings_file:    
             # caffe requires string type of str and not unicode
             settings = dict_unicode2str(json.load(settings_file))
+            settings["settings_filename"] = settings_filename
     except IOError as e:
         print "Unable to open settings file!"
         exit()
@@ -109,3 +113,20 @@ def check_arguments(argv, count, output_str):
     if (len(argv) != count+1):
         print output_str
         exit()
+
+def create_log_dir(model_log_dir):
+    log_id = current_time()
+    log_dir = os.path.join(model_log_dir, log_id)
+    os.makedirs(log_dir)
+
+    return log_dir
+
+def log_file(file_src_path, log_dir):
+    shutil.copy(file_src_path, log_dir)
+
+def sec2hms(seconds):
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    hms_str = "%02d:%02d:%02d" % (h, m, s)
+
+    return hms_str

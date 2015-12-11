@@ -23,7 +23,6 @@ from pylab import *
 # save current model when Ctrl+C
 
 def main():
-    training_id = tl.current_time()
     tl.check_arguments(sys.argv, 1, "You have to specify settings file!\n./train.py settings_file")
 
     settings_filename = sys.argv[1]
@@ -31,17 +30,14 @@ def main():
     
     caffe.set_mode_gpu()
     prepare_data(settings)
-
     solver = prepare_model(settings)
+    train_loss, duration, terminated_it = train_model(solver, settings)
 
-    train_loss, duration = train_model(solver, settings)
-
-    log(train_loss, duration, settings)
+    log(train_loss, duration, terminated_it, settings)
 
 # TODO CAFFE LOG
-def log(train_loss, duration_int, settings):
+def log(train_loss, duration_int, terminated_it, settings):
     log_dir = tl.create_log_dir(settings["model_log_dir"])
-    print log_dir
     tl.log_file(settings["solver_path"], log_dir)
     tl.log_file(settings["settings_filename"], log_dir)
     tl.log_file(settings["input_img_lists"][0], log_dir)
@@ -51,17 +47,23 @@ def log(train_loss, duration_int, settings):
     log_loss(train_loss, log_dir)
 
     # duration
-    duration_str = log_duration(log_dir, duration_int)
-    print "\nDuration: " + duration_str
+    duration_str = log_to_file(log_dir, "duration", tl.sec2hms(duration_int))
 
-def log_duration(log_dir, duration_int):
-    duration_str = sec2hms(duration_int) # better readable format
-    duration_path = os.path.join(log_dir, "duration")
+    # terminated training
+    if (terminated_it != None):
+        log_to_file(log_dir, "termination", terminated_it)
+        print "Terminated: " + str(terminated_it) + " iterations"
 
-    with open(duration_path, 'wb') as f:
-        f.write(duration_str)
+    print "Duration: " + duration_str
+    print "Logged to " + log_dir
 
-    return duration_str
+def log_to_file(log_dir, file_name, content):
+    file_path = os.path.join(log_dir, file_name)
+
+    with open(file_path, 'wb') as f:
+        f.write(str(content))
+
+    return content 
 
 def log_loss(train_loss, log_dir):
     plot(np.vstack([train_loss]).T)
@@ -96,6 +98,7 @@ def prepare_model(settings):
 def train_model(solver, settings):
     n_iter = settings["n_iter"]
     train_loss = np.zeros(n_iter)
+    terminated_it = None
 
     start = time.clock()
     for it in range(n_iter):
@@ -105,12 +108,13 @@ def train_model(solver, settings):
         except KeyboardInterrupt:
             end = time.clock()
             duration = end-start
-            return train_loss, duration
+            terminated_it = it
+            return train_loss, duration, terminated_it
 
     end = time.clock()
     duration = end-start
 
-    return train_loss, duration
+    return train_loss, duration, terminated_it
 
 # TODO finish
 def test_model(solver):
@@ -123,13 +127,6 @@ def test_model(solver):
         accuracy /= test_iters
 
     return accuracy
-
-def sec2hms(seconds):
-    m, s = divmod(seconds, 60)
-    h, m = divmod(m, 60)
-    hms_str = "%02d:%02d:%02d" % (h, m, s)
-
-    return hms_str
 
 if __name__ == "__main__":
     main()
