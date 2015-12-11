@@ -82,6 +82,18 @@ def train_model(solver, settings):
 
     return train_loss, duration
 
+# TODO finish
+def test_model(solver):
+    test_iters = 10 # why 10?
+    accuracy = 0
+
+    for it in arange(test_iters):
+        solver.test_nets[0].forward()
+        accuracy += solver.test_nets[0].blobs['accuracy'].data
+        accuracy /= test_iters
+
+    return accuracy
+
 def plot_and_save_loss(train_loss, training_id, settings):
     plot(np.vstack([train_loss]).T)
     plot_name = os.path.join(settings["model_dir"], "logs", "loss-" + training_id + ".png")
