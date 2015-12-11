@@ -146,3 +146,56 @@ def solver_write_field_value(f, field, value):
         f.write(field + ": " + value + "\n")
     else:
         f.write(field + ": \"" + value + "\"\n")
+
+def log_to_file(log_dir, file_name, content):
+    file_path = os.path.join(log_dir, file_name)
+
+    with open(file_path, 'wb') as f:
+        f.write(str(content))
+
+    return content 
+
+'''
+Eli Bendersky
+http://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/
+'''
+from contextlib import contextmanager
+import ctypes
+import io
+import tempfile
+
+libc = ctypes.CDLL(None)
+c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+
+@contextmanager
+def redirect_caffe_log(stream):
+    # The original fd stderr points to.
+    original_stderr_fd = sys.stderr.fileno()
+
+    def _redirect_stderr(to_fd):
+        """Redirect stderr to the given file descriptor."""
+        # Flush the C-level buffer stderr
+        libc.fflush(c_stderr)
+        # Flush and close sys.stderr - also closes the file descriptor (fd)
+        sys.stderr.close()
+        # Make original_stderr_fd point to the same file as to_fd
+        os.dup2(to_fd, original_stderr_fd)
+        # Create a new sys.stderr that points to the redirected fd
+        sys.stderr = os.fdopen(original_stderr_fd, 'wb')
+    
+    # Save a copy of the original stdout fd in saved_stderr_fd
+    saved_stderr_fd = os.dup(original_stderr_fd)
+    try:
+        # Create a temporary file and redirect stdout to it
+        tfile = tempfile.TemporaryFile(mode='w+b')
+        _redirect_stderr(tfile.fileno())
+        # Yield to caller, then redirect stdout back to the saved fd
+        yield
+        _redirect_stderr(saved_stderr_fd)
+        # Copy contents of temporary file to the given stream
+        tfile.flush()
+        tfile.seek(0, io.SEEK_SET)
+        stream.write(unicode(tfile.read(), 'unicode-escape'))
+    finally:
+        tfile.close()
+        os.close(saved_stderr_fd)

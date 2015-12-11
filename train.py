@@ -11,6 +11,7 @@ import os
 import sys
 import csv
 import time
+import io
 import numpy as np
 import label_init as li
 import tools as tl
@@ -28,13 +29,18 @@ def main():
 
     train_id = tl.generate_unique_id()
     settings = modify_solver(train_id, settings)
-    
-    caffe.set_mode_gpu()
-    prepare_data(settings)
-    solver = prepare_model(settings)
-    train_loss, duration, iteration = train_model(solver, settings)
 
-    log(train_loss, duration, iteration, solver, settings)
+    caffe_stream = io.StringIO()
+    with tl.redirect_caffe_log(caffe_stream): 
+        caffe.set_mode_gpu()
+        prepare_data(settings)
+        solver = prepare_model(settings)
+        train_loss, duration, iteration = train_model(solver, settings)
+
+    log(solver, train_loss, duration, iteration, caffe_stream, settings)
+
+    #with open("help.txt", 'wb') as f2:
+    #    f2.write(caffe_stream.getvalue().decode('utf-8'))
 
 def modify_solver(train_id, settings):
     log_dir = tl.create_log_dir(settings["log_dir"], train_id)
@@ -50,7 +56,7 @@ def modify_solver(train_id, settings):
     
     return settings
 
-def log(train_loss, duration_int, iteration, solver, settings):
+def log(solver, train_loss, duration_int, iteration, caffe_stream, settings):
     log_dir = settings["log_dir"]
     tl.log_file(settings["settings_filename"], log_dir)
     tl.log_file(settings["input_img_lists"][0], log_dir)
@@ -60,7 +66,7 @@ def log(train_loss, duration_int, iteration, solver, settings):
     log_loss(train_loss, log_dir)
 
     # duration
-    duration_str = log_to_file(log_dir, "duration", tl.sec2hms(duration_int))
+    duration_str = tl.log_to_file(log_dir, "duration", tl.sec2hms(duration_int))
 
     # save model
     solver.net.save(os.path.join(log_dir, "final.caffemodel"))
@@ -68,20 +74,16 @@ def log(train_loss, duration_int, iteration, solver, settings):
     # terminated training
     if (iteration != None):
         # save current iteration
-        log_to_file(log_dir, "termination", iteration)
+        tl.log_to_file(log_dir, "termination", iteration)
         print "Terminated: " + str(iteration) + " iterations"
 
+    # caffe log
+    caffe_log_path = os.path.join(settings["log_dir"], "caffe.log")
+    with open(caffe_log_path, 'wb') as f:
+        f.write(caffe_stream.getvalue().decode('utf-8'))
 
     print "Duration: " + duration_str
     print "Logged to " + log_dir
-
-def log_to_file(log_dir, file_name, content):
-    file_path = os.path.join(log_dir, file_name)
-
-    with open(file_path, 'wb') as f:
-        f.write(str(content))
-
-    return content 
 
 def log_loss(train_loss, log_dir):
     plot(np.vstack([train_loss]).T)
@@ -134,17 +136,17 @@ def train_model(solver, settings):
 
     return train_loss, duration, terminated_it
 
-# TODO finish
-def test_model(solver):
-    test_iters = 10 # why 10?
-    accuracy = 0
-
-    for it in arange(test_iters):
-        solver.test_nets[0].forward()
-        accuracy += solver.test_nets[0].blobs['accuracy'].data
-        accuracy /= test_iters
-
-    return accuracy
+# TODO DEPRECATED?
+#def test_model(solver, settings):
+#    test_iter = 10 # why 10?
+#    accuracy = 0
+#
+#    for it in arange(test_iter):
+#        solver.test_nets[0].forward()
+#        accuracy += solver.test_nets[0].blobs['accuracy'].data
+#        accuracy /= test_iters
+#
+#    return accuracy
 
 if __name__ == "__main__":
     main()
