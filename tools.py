@@ -135,7 +135,14 @@ def modify_solver_parameter(solver_in, solver_out, field, value):
     with open(solver_in, 'rb') as f_in:
         with open(solver_out, 'wb') as f_out:
             for line in f_in:
+
                 if (re.match(field, line)):
-                    f_out.write(field + ": \"" + value + "\"\n")
+                    solver_write_field_value(f_out, field, str(value))
                 else:
                     f_out.write(line)
+
+def solver_write_field_value(f, field, value):
+    if value.isdigit():
+        f.write(field + ": " + value + "\n")
+    else:
+        f.write(field + ": \"" + value + "\"\n")

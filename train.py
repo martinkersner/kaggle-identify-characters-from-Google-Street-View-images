@@ -27,25 +27,31 @@ def main():
     settings = tl.load_settings(settings_filename)
 
     train_id = tl.generate_unique_id()
-
-    # TODO refactor
-    log_dir = tl.create_log_dir(settings["log_dir"], train_id)
-    new_solver_path = os.path.join(log_dir, "solver.prototxt")
-    tl.modify_solver_parameter(settings["solver_path"], 
-                               new_solver_path,
-                               "snapshot_prefix", 
-                               os.path.join(settings["log_dir"], train_id))
-    settings["solver_path"] = new_solver_path
-    ##
+    settings = modify_solver(train_id, settings)
     
     caffe.set_mode_gpu()
     prepare_data(settings)
     solver = prepare_model(settings)
-    train_loss, duration, terminated_it = train_model(solver, settings)
+    train_loss, duration, iteration = train_model(solver, settings)
 
-    log(train_id, train_loss, duration, terminated_it, solver, log_dir, settings)
+    log(train_loss, duration, iteration, solver, settings)
 
-def log(train_id, train_loss, duration_int, terminated_it, solver, log_dir, settings):
+def modify_solver(train_id, settings):
+    log_dir = tl.create_log_dir(settings["log_dir"], train_id)
+    new_solver_path = os.path.join(log_dir, "solver.prototxt")
+
+    tl.modify_solver_parameter(settings["solver_path"], 
+                               new_solver_path,
+                               "snapshot_prefix", 
+                               os.path.join(settings["log_dir"], train_id) + "/")
+
+    settings["solver_path"] = new_solver_path
+    settings["log_dir"]     = log_dir
+    
+    return settings
+
+def log(train_loss, duration_int, iteration, solver, settings):
+    log_dir = settings["log_dir"]
     tl.log_file(settings["settings_filename"], log_dir)
     tl.log_file(settings["input_img_lists"][0], log_dir)
     tl.log_file(settings["input_img_lists"][1], log_dir)
@@ -56,14 +62,14 @@ def log(train_id, train_loss, duration_int, terminated_it, solver, log_dir, sett
     # duration
     duration_str = log_to_file(log_dir, "duration", tl.sec2hms(duration_int))
 
-    # terminated training
-    if (terminated_it != None):
-        # save model
-        solver.net.save(os.path.join(log_dir, "terminated.caffemodel"))
+    # save model
+    solver.net.save(os.path.join(log_dir, "final.caffemodel"))
 
+    # terminated training
+    if (iteration != None):
         # save current iteration
-        log_to_file(log_dir, "termination", terminated_it)
-        print "Terminated: " + str(terminated_it) + " iterations"
+        log_to_file(log_dir, "termination", iteration)
+        print "Terminated: " + str(iteration) + " iterations"
 
 
     print "Duration: " + duration_str
