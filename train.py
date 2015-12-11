@@ -20,7 +20,6 @@ from pylab import *
 
 # TODO 
 # saving LOGS
-# automaticaly save solver params
 # save current model when Ctrl+C
 
 def main():
@@ -29,15 +28,46 @@ def main():
 
     settings_filename = sys.argv[1]
     settings = tl.load_settings(settings_filename)
+    
+    caffe.set_mode_gpu()
     prepare_data(settings)
 
-    caffe.set_mode_gpu()
     solver = prepare_model(settings)
+
     train_loss, duration = train_model(solver, settings)
 
-    plot_and_save_loss(train_loss, training_id, settings)
-    print "\nDuration: " + sec2hms(duration)
+    log(train_loss, duration, settings)
 
+# TODO CAFFE LOG
+def log(train_loss, duration_int, settings):
+    log_dir = tl.create_log_dir(settings["model_log_dir"])
+    print log_dir
+    tl.log_file(settings["solver_path"], log_dir)
+    tl.log_file(settings["settings_filename"], log_dir)
+    tl.log_file(settings["input_img_lists"][0], log_dir)
+    tl.log_file(settings["input_img_lists"][1], log_dir)
+
+    # loss
+    log_loss(train_loss, log_dir)
+
+    # duration
+    duration_str = log_duration(log_dir, duration_int)
+    print "\nDuration: " + duration_str
+
+def log_duration(log_dir, duration_int):
+    duration_str = sec2hms(duration_int) # better readable format
+    duration_path = os.path.join(log_dir, "duration")
+
+    with open(duration_path, 'wb') as f:
+        f.write(duration_str)
+
+    return duration_str
+
+def log_loss(train_loss, log_dir):
+    plot(np.vstack([train_loss]).T)
+    plot_name = os.path.join(log_dir, "loss.png")
+    savefig(plot_name, bbox_inches='tight')
+    
 def prepare_data(settings):
     db_names        = settings["db_names"]
     input_img_lists = settings["input_img_lists"]
@@ -55,8 +85,8 @@ def prepare_data(settings):
             print "Database " + db + " already exists!"
 
 def prepare_model(settings):
-    model_path  = settings["model_path"] + ".prototxt"
-    solver_path = settings["solver_path"] + ".caffemodel"
+    solver_path = settings["solver_path"]
+    model_path  = settings["model_path"]
     
     solver = caffe.SGDSolver(solver_path)
     solver.net.copy_from(model_path) # TODO add condition for fine-tuning
@@ -93,11 +123,6 @@ def test_model(solver):
         accuracy /= test_iters
 
     return accuracy
-
-def plot_and_save_loss(train_loss, training_id, settings):
-    plot(np.vstack([train_loss]).T)
-    plot_name = os.path.join(settings["model_dir"], "logs", "loss-" + training_id + ".png")
-    savefig(plot_name, bbox_inches='tight')
 
 def sec2hms(seconds):
     m, s = divmod(seconds, 60)
